@@ -1,5 +1,5 @@
 // Basic service worker for offline caching of static assets and navigation fallback
-const CACHE_NAME = 'diva-salon-v2';
+const CACHE_NAME = 'diva-salon-v3';
 const OFFLINE_URL = '/';
 
 self.addEventListener('install', (event) => {
@@ -38,18 +38,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For same-origin static assets: cache-first
+  // For same-origin requests
   const url = new URL(req.url);
   if (url.origin === location.origin) {
-    event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(()=>{});
-          return res;
-        }).catch(() => cached);
-      })
-    );
+    const path = url.pathname;
+
+    // Never cache API responses; let network + server headers control it
+    if (path.startsWith('/api/')) return;
+
+    // Only cache-known static assets: Next static, icons, manifest
+    const isStatic =
+      path.startsWith('/_next/static/') ||
+      path.startsWith('/icons/') ||
+      path === '/manifest.webmanifest' ||
+      path.endsWith('.png') || path.endsWith('.svg') || path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.gif') || path.endsWith('.webp') ||
+      path.endsWith('.css') || path.endsWith('.js');
+
+    if (isStatic) {
+      // cache-first for static files
+      event.respondWith(
+        caches.match(req).then((cached) => {
+          if (cached) return cached;
+          return fetch(req).then((res) => {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(()=>{});
+            return res;
+          }).catch(() => cached);
+        })
+      );
+    } else {
+      // network-first for other same-origin content, no caching
+      event.respondWith(
+        fetch(req).catch(() => caches.match(req))
+      );
+    }
   }
 });

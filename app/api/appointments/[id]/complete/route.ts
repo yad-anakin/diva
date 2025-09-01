@@ -6,17 +6,21 @@ const DB_NAME = 'diva';
 const APPT_COLLECTION = 'appointments';
 const HISTORY_COLLECTION = 'history';
 
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 // Mark an appointment as completed: move it to history and remove from appointments
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
-    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400, headers: { 'Cache-Control': 'no-store' } });
 
     const client = await clientPromise;
     const db = client.db(DB_NAME);
 
     const appt = await db.collection(APPT_COLLECTION).findOne({ _id: new ObjectId(id) });
-    if (!appt) return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
+    if (!appt) return NextResponse.json({ error: 'Appointment not found' }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
 
     const historyDoc: any = {
       buyer: appt.buyer || '',
@@ -33,9 +37,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     const insertRes = await db.collection(HISTORY_COLLECTION).insertOne(historyDoc);
     await db.collection(APPT_COLLECTION).deleteOne({ _id: new ObjectId(id) });
 
-    return NextResponse.json({ _id: String(insertRes.insertedId), ...historyDoc }, { status: 201 });
+    return NextResponse.json({ _id: String(insertRes.insertedId), ...historyDoc }, { status: 201, headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' } });
   } catch (err: any) {
     console.error('POST /api/appointments/[id]/complete failed:', err);
-    return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }
 }

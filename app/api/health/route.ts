@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 export async function GET() {
   try {
     const client = await clientPromise;
@@ -21,7 +25,7 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ ok: true, ping, ...(Object.keys(devInfo).length ? { devInfo } : {}) }, { status: 200 });
+    return NextResponse.json({ ok: true, ping, ...(Object.keys(devInfo).length ? { devInfo } : {}) }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
   } catch (err: any) {
     console.error('MongoDB health check failed:', err?.message || err);
     const body: any = { ok: false, error: err?.message || 'Unknown error' };
@@ -37,6 +41,6 @@ export async function GET() {
         body.devInfo = { uri: '<unparseable>' };
       }
     }
-    return NextResponse.json(body, { status: 500 });
+    return NextResponse.json(body, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }
 }

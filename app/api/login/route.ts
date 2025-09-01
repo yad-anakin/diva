@@ -1,3 +1,6 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 import { NextRequest, NextResponse } from 'next/server';
 
 function constantTimeEqual(a: string, b: string): boolean {
@@ -14,7 +17,7 @@ export async function POST(req: NextRequest) {
     // Enforce JSON content-type to reduce risk of request smuggling/CSRF variants
     const ct = req.headers.get('content-type') || '';
     if (!ct.includes('application/json')) {
-      return NextResponse.json({ error: 'Unsupported content-type' }, { status: 400 });
+      return NextResponse.json({ error: 'Unsupported content-type' }, { status: 400, headers: { 'Cache-Control': 'no-store' } });
     }
 
     const body = await req.json().catch(() => ({}));
@@ -23,20 +26,20 @@ export async function POST(req: NextRequest) {
 
     // Basic input validation
     if (!email || !password || email.length > 256 || password.length > 256) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
     }
 
     const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim();
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
     if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-      return NextResponse.json({ error: 'Server not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'Server not configured' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
     }
 
     const ok = constantTimeEqual(email, ADMIN_EMAIL) && constantTimeEqual(password, ADMIN_PASSWORD);
     if (!ok) {
       // Do not reflect attacker-controlled content or details
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
     }
 
     const res = NextResponse.json({ ok: true }, { status: 200 });
@@ -52,6 +55,6 @@ export async function POST(req: NextRequest) {
     return res;
   } catch {
     // Avoid leaking internal details
-    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });
+    return NextResponse.json({ error: 'Unexpected error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }
 }
