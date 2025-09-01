@@ -316,7 +316,9 @@ export default function SettingsPage() {
                     <>
                       <div className="flex-1">
                         <div className="font-medium">{s.name}</div>
-                        <div className="text-xs text-gray-500">IQD {s.price.toLocaleString()}</div>
+                        <div className="text-xs text-gray-500" suppressHydrationWarning>
+                          IQD {new Intl.NumberFormat('ar-IQ').format(s.price)}
+                        </div>
                       </div>
                       <button onClick={() => startEditService(s)} className="btn btn-outline">تعديل</button>
                       <button onClick={() => requestDeleteService(s)} className="btn btn-outline">حذف</button>

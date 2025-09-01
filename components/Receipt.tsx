@@ -12,9 +12,9 @@ export type ReceiptData = {
 
 function money(amount: number, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount);
+    return new Intl.NumberFormat('ar-IQ', { style: "currency", currency }).format(amount);
   } catch {
-    return `${currency} ${amount.toLocaleString()}`;
+    return `${currency} ${new Intl.NumberFormat('ar-IQ').format(amount)}`;
   }
 }
 
@@ -33,14 +33,14 @@ export default function Receipt({ data }: { data: ReceiptData }) {
           <div><span className="font-medium">الزبونة:</span> {data.buyer || "-"}</div>
           <div>
             <span className="font-medium">التاريخ:</span>{" "}
-            {new Date(data.when).toLocaleString("ar-IQ", {
+            <span suppressHydrationWarning>{new Date(data.when).toLocaleString("ar-IQ", {
               weekday: "long",
               year: "numeric",
               month: "long",
               day: "numeric",
               hour: "2-digit",
               minute: "2-digit",
-            })}
+            })}</span>
           </div>
           <div><span className="font-medium">الموظفات:</span> {data.employees.length ? data.employees.map(e => e.name).join(", ") : "-"}</div>
         </div>

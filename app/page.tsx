@@ -9,7 +9,8 @@ import type { Employee, Service } from "@/components/types";
 export default function HomePage() {
   const [buyer, setBuyer] = useState("");
   const [currency, setCurrency] = useState("IQD");
-  const [when, setWhen] = useState(() => new Date());
+  // Defer time initialization to client to avoid SSR/CSR mismatch
+  const [when, setWhen] = useState<Date | null>(null);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
@@ -23,6 +24,11 @@ export default function HomePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   type Appt = { buyer?: string; when: string; createdAt?: string; serviceIds?: string[]; currency?: string; overrides?: Record<string, number> };
   const [recentAppts, setRecentAppts] = useState<Appt[]>([]);
+
+  useEffect(() => {
+    // Initialize time on mount to avoid hydration mismatch
+    if (!when) setWhen(new Date());
+  }, [when]);
 
   useEffect(() => {
     let mounted = true;
@@ -115,7 +121,7 @@ export default function HomePage() {
         buyer: buyer || "-",
         employeeIds: selectedEmployeeIds,
         serviceIds: selectedServiceIds,
-        when: when.toISOString(),
+        when: (when ?? new Date()).toISOString(),
         currency,
         overrides,
       };
@@ -148,7 +154,7 @@ export default function HomePage() {
     employees: selectedEmployees,
     services: selectedServices,
     overrides,
-    when: when.toISOString(),
+    when: (when ?? new Date()).toISOString(),
   };
 
   return (
@@ -231,14 +237,18 @@ export default function HomePage() {
                 <label className="block text-sm text-gray-600 mb-1">التاريخ والوقت</label>
                 <input
                   type="datetime-local"
-                  value={new Date(when.getTime() - when.getTimezoneOffset() * 60000)
-                    .toISOString()
-                    .slice(0, 16)}
+                  value={when
+                    ? new Date(when.getTime() - when.getTimezoneOffset() * 60000)
+                        .toISOString()
+                        .slice(0, 16)
+                    : ""}
                   onChange={(e) => setWhen(new Date(e.target.value))}
                   className="w-full border rounded-xl px-3 py-2"
                 />
-                <div className="text-xs text-gray-500 mt-1">
-                  {when.toLocaleString("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                <div className="text-xs text-gray-500 mt-1" suppressHydrationWarning>
+                  {when
+                    ? when.toLocaleString("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                    : ""}
                 </div>
               </div>
             </div>
@@ -251,7 +261,9 @@ export default function HomePage() {
                     <div key={s.id} className="flex items-center justify-between gap-3">
                       <div>
                         <div className="font-medium">{s.name}</div>
-                        <div className="text-xs text-gray-500">الافتراضي: IQD {s.price.toLocaleString()}</div>
+                        <div className="text-xs text-gray-500" suppressHydrationWarning>
+                          الافتراضي: IQD {new Intl.NumberFormat('ar-IQ').format(s.price)}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-500">السعر</span>
@@ -265,14 +277,14 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between mt-4 text-lg font-semibold">
+                <div className="flex justify-between mt-4 text-lg font-semibold" suppressHydrationWarning>
                   <span>المجموع</span>
                   <span>
                     {(() => {
                       try {
-                        return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(total);
+                        return new Intl.NumberFormat('ar-IQ', { style: "currency", currency }).format(total);
                       } catch {
-                        return `${currency} ${total.toLocaleString()}`;
+                        return `${currency} ${new Intl.NumberFormat('ar-IQ').format(total)}`;
                       }
                     })()}
                   </span>
@@ -310,8 +322,8 @@ export default function HomePage() {
                   const price = (it.overrides?.[sid] ?? s?.price) ?? 0;
                   return acc + price;
                 }, 0);
-                let totalFmt = `${currencyToUse} ${total.toLocaleString()}`;
-                try { totalFmt = new Intl.NumberFormat(undefined, { style: "currency", currency: currencyToUse }).format(total); } catch {}
+                let totalFmt = `${currencyToUse} ${new Intl.NumberFormat('ar-IQ').format(total)}`;
+                try { totalFmt = new Intl.NumberFormat('ar-IQ', { style: "currency", currency: currencyToUse }).format(total); } catch {}
                 const timeStr = new Date(it.when).toLocaleTimeString("ar-IQ", { hour: "2-digit", minute: "2-digit" });
                 return (
                   <li key={`${it.when}-${idx}`} className="py-2 flex items-center justify-between">
@@ -319,7 +331,7 @@ export default function HomePage() {
                       <span className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-pink-50 text-diva-deep">👤</span>
                       <div>
                         <div className="font-medium">{it.buyer && it.buyer.trim() ? it.buyer : "-"}</div>
-                        <div className="text-xs text-gray-500">{timeStr}</div>
+                        <div className="text-xs text-gray-500" suppressHydrationWarning>{timeStr}</div>
                       </div>
                     </div>
                     <div className="text-sm font-semibold">{totalFmt}</div>
