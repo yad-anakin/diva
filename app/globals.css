@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #fff;
+  --fg: #111827;
+}
+
+html, body, #__next { height: 100%; }
+
+body {
+  /* Solid pink background */
+  background: #fde7f3;
+  color: var(--fg);
+}
+
+/* Cards */
+.card {
+  @apply bg-white/80 backdrop-blur border border-pink-100 rounded-2xl;
+}
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors;
+}
+.btn-primary {
+  @apply bg-diva-deep text-white hover:bg-pink-700;
+}
+.btn-outline {
+  @apply border border-diva-deep text-diva-deep hover:bg-diva-deep hover:text-white;
+}
+
+/* Print rules */
+@media print {
+  body { background: #fff; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
