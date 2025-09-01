@@ -316,7 +316,7 @@ export default function HistoryPage() {
                       <div key={s.id} className="flex items-center justify-between gap-3">
                         <div>
                           <div className="font-medium">{s.name}</div>
-                          <div className="text-xs text-gray-500">الافتراضي: IQD {s.price.toLocaleString()}</div>
+                          <div className="text-xs text-gray-500" suppressHydrationWarning>الافتراضي: IQD {new Intl.NumberFormat('ar-IQ').format(s.price)}</div>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-500">السعر</span>
@@ -339,9 +339,9 @@ export default function HistoryPage() {
                       {(() => {
                         const total = services.filter((s) => editServiceIds.includes(s.id)).reduce((acc, s) => acc + (editOverrides[s.id] ?? s.price), 0);
                         try {
-                          return new Intl.NumberFormat(undefined, { style: "currency", currency: editCurrency }).format(total);
+                          return new Intl.NumberFormat('ar-IQ', { style: "currency", currency: editCurrency }).format(total);
                         } catch {
-                          return `${editCurrency} ${total.toLocaleString()}`;
+                          return `${editCurrency} ${new Intl.NumberFormat('ar-IQ').format(total)}`;
                         }
                       })()}
                     </span>
@@ -388,7 +388,7 @@ export default function HistoryPage() {
                   <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-pink-50 text-diva-deep">👤</span>
                   <div>
                     <div className="font-medium">{it.buyer && it.buyer.trim() ? it.buyer : "-"}</div>
-                    <div className="text-xs text-gray-500">{new Date(it.when).toLocaleDateString("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
+                    <div className="text-xs text-gray-500" suppressHydrationWarning>{new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(new Date(it.when))}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -442,7 +442,7 @@ export default function HistoryPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs text-gray-500">التاريخ</div>
-                  <div>{new Date(selectedAppt.when).toLocaleDateString("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
+                  <div suppressHydrationWarning>{new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(new Date(selectedAppt.when))}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">الوقت</div>
@@ -458,7 +458,7 @@ export default function HistoryPage() {
                       const s = services.find((x) => x.id === sid);
                       return (
                         <li key={sid} className="text-sm">
-                          {s ? `${s.name} - ${new Intl.NumberFormat(undefined, { style: "currency", currency: selectedAppt.currency || "IQD" }).format((selectedAppt.overrides?.[sid] ?? s.price))}` : sid}
+                          {s ? `${s.name} - ${new Intl.NumberFormat('ar-IQ', { style: "currency", currency: selectedAppt.currency || "IQD" }).format((selectedAppt.overrides?.[sid] ?? s.price))}` : sid}
                         </li>
                       );
                     })}
@@ -496,9 +496,9 @@ export default function HistoryPage() {
                       return acc + price;
                     }, 0);
                     try {
-                      return new Intl.NumberFormat(undefined, { style: "currency", currency: selectedAppt.currency || "IQD" }).format(total);
+                      return new Intl.NumberFormat('ar-IQ', { style: "currency", currency: selectedAppt.currency || "IQD" }).format(total);
                     } catch {
-                      return `${selectedAppt.currency || "IQD"} ${total.toLocaleString()}`;
+                      return `${selectedAppt.currency || "IQD"} ${new Intl.NumberFormat('ar-IQ').format(total)}`;
                     }
                   })()}
                 </div>
@@ -525,7 +525,7 @@ export default function HistoryPage() {
                 <p>هل أنت متأكدة من حذف سجل الزبونة التالية؟ لا يمكن التراجع عن هذا الإجراء.</p>
                 <div className="p-3 rounded-xl bg-pink-50 text-pink-900">
                   <div className="font-medium">{deleteTarget.buyer || '-'}</div>
-                  <div className="text-xs text-pink-800">{new Date(deleteTarget.when).toLocaleString('ar-IQ')}</div>
+                  <div className="text-xs text-pink-800" suppressHydrationWarning>{new Intl.DateTimeFormat('ar-IQ', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(deleteTarget.when))}</div>
                 </div>
                 {actionError && <div className="text-sm text-red-600">{actionError}</div>}
                 <div className="flex items-center justify-end gap-3">

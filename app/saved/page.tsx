@@ -28,7 +28,7 @@ export default function SavedAppointmentsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<DbAppointment | null>(null);
   const [editBuyer, setEditBuyer] = useState("");
-  const [editWhenISO, setEditWhenISO] = useState<string>(new Date().toISOString());
+  const [editWhenISO, setEditWhenISO] = useState<string>("");
   const [editServiceIds, setEditServiceIds] = useState<string[]>([]);
   const [editEmployeeIds, setEditEmployeeIds] = useState<string[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -70,6 +70,11 @@ export default function SavedAppointmentsPage() {
   useEffect(() => {
     fetchAppointments();
   }, []);
+
+  // Initialize client-side only values to avoid SSR/CSR time mismatches
+  useEffect(() => {
+    if (!editWhenISO) setEditWhenISO(new Date().toISOString());
+  }, [editWhenISO]);
 
   useEffect(() => {
     let mounted = true;
@@ -280,15 +285,8 @@ export default function SavedAppointmentsPage() {
                     <div className="flex items-start justify-between gap-3 cursor-pointer hover:bg-pink-50/40 px-2 rounded" onClick={() => setSelectedAppt(it)} title="عرض التفاصيل">
                       <div>
                         <div className="font-medium">{it.buyer || "-"}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(it.when).toLocaleString("ar-IQ", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                        <div className="text-xs text-gray-500" suppressHydrationWarning>
+                          {new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(it.when))}
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
                           {sList.map((s) => s.name).join(", ") || "-"}
@@ -301,9 +299,9 @@ export default function SavedAppointmentsPage() {
                         <div className="text-sm font-semibold">
                           {(() => {
                             try {
-                              return new Intl.NumberFormat(undefined, { style: "currency", currency: it.currency }).format(total);
+                              return new Intl.NumberFormat("ar-IQ", { style: "currency", currency: it.currency }).format(total);
                             } catch {
-                              return `${it.currency} ${total.toLocaleString()}`;
+                              return `${it.currency} ${new Intl.NumberFormat("ar-IQ").format(total)}`;
                             }
                           })()}
                         </div>
@@ -342,7 +340,7 @@ export default function SavedAppointmentsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-gray-500">التاريخ</div>
-                    <div>{new Date(selectedAppt.when).toLocaleDateString("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
+                    <div suppressHydrationWarning>{new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(new Date(selectedAppt.when))}</div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500">الوقت</div>
@@ -358,7 +356,7 @@ export default function SavedAppointmentsPage() {
                         const s = services.find((x) => x.id === sid);
                         return (
                           <li key={sid} className="text-sm">
-                            {s ? `${s.name} - ${(() => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: selectedAppt.currency || 'IQD' }).format((selectedAppt.overrides?.[sid] ?? s.price)); } catch { return `${selectedAppt.currency || 'IQD'} ${(selectedAppt.overrides?.[sid] ?? s.price).toLocaleString()}` } })()}` : sid}
+                            {s ? `${s.name} - ${(() => { try { return new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: selectedAppt.currency || 'IQD' }).format((selectedAppt.overrides?.[sid] ?? s.price)); } catch { return `${selectedAppt.currency || 'IQD'} ${new Intl.NumberFormat('ar-IQ').format((selectedAppt.overrides?.[sid] ?? s.price))}` } })()}` : sid}
                           </li>
                         );
                       })}
@@ -396,9 +394,9 @@ export default function SavedAppointmentsPage() {
                         return acc + price;
                       }, 0);
                       try {
-                        return new Intl.NumberFormat(undefined, { style: "currency", currency: selectedAppt.currency || "IQD" }).format(total);
+                        return new Intl.NumberFormat("ar-IQ", { style: "currency", currency: selectedAppt.currency || "IQD" }).format(total);
                       } catch {
-                        return `${selectedAppt.currency || "IQD"} ${total.toLocaleString()}`;
+                        return `${selectedAppt.currency || "IQD"} ${new Intl.NumberFormat("ar-IQ").format(total)}`;
                       }
                     })()}
                   </div>
@@ -493,7 +491,9 @@ export default function SavedAppointmentsPage() {
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">التاريخ والوقت</label>
                   <button type="button" onClick={() => setEditCalendarOpen(true)} className="w-full border rounded-xl px-3 py-2 text-right hover:bg-pink-50">
-                    {new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(editWhenISO))}
+                    <span suppressHydrationWarning>
+                      {new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(editWhenISO))}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -512,8 +512,8 @@ export default function SavedAppointmentsPage() {
                         {editServiceIds.map((sid) => {
                           const s = services.find((x) => x.id === sid);
                           const price = (editing?.overrides?.[sid] ?? s?.price ?? 0);
-                          let priceFmt = `${editing?.currency || 'IQD'} ${price.toLocaleString()}`;
-                          try { priceFmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: editing?.currency || 'IQD' }).format(price); } catch {}
+                          let priceFmt = `${editing?.currency || 'IQD'} ${new Intl.NumberFormat('ar-IQ').format(price)}`;
+                          try { priceFmt = new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: editing?.currency || 'IQD' }).format(price); } catch {}
                           return (
                             <li key={sid} className="text-sm">
                               {s ? `${s.name} - ${priceFmt}` : sid}
@@ -530,9 +530,9 @@ export default function SavedAppointmentsPage() {
                               return acc + (editing?.overrides?.[sid] ?? svc?.price ?? 0);
                             }, 0);
                             try {
-                              return new Intl.NumberFormat(undefined, { style: 'currency', currency: editing?.currency || 'IQD' }).format(total);
+                              return new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: editing?.currency || 'IQD' }).format(total);
                             } catch {
-                              return `${editing?.currency || 'IQD'} ${total.toLocaleString()}`;
+                              return `${editing?.currency || 'IQD'} ${new Intl.NumberFormat('ar-IQ').format(total)}`;
                             }
                           })()}
                         </div>

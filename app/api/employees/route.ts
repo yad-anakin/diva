@@ -4,6 +4,10 @@ import clientPromise from '@/lib/mongodb';
 const DB_NAME = 'diva';
 const COLLECTION = 'employees';
 
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 export async function GET() {
   try {
     const client = await clientPromise;
@@ -19,10 +23,10 @@ export async function GET() {
       }
     }
     const serialized = items.map((it: any) => ({ id: String(it._id), name: it.name }));
-    return NextResponse.json(serialized, { status: 200 });
+    return NextResponse.json(serialized, { status: 200, headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' } });
   } catch (err: any) {
     console.error('GET /api/employees failed:', err);
-    return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }
 }
 
@@ -36,7 +40,7 @@ export async function POST(req: NextRequest) {
     const db = client.db(DB_NAME);
     const doc = { name: String(body.name) };
     const result = await db.collection(COLLECTION).insertOne(doc);
-    return NextResponse.json({ id: String(result.insertedId), ...doc }, { status: 201 });
+    return NextResponse.json({ id: String(result.insertedId), ...doc }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
   } catch (err: any) {
     console.error('POST /api/employees failed:', err);
     return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 });
@@ -48,7 +52,7 @@ export async function DELETE() {
     const client = await clientPromise;
     const db = client.db(DB_NAME);
     const res = await db.collection(COLLECTION).deleteMany({});
-    return NextResponse.json({ deletedCount: res.deletedCount }, { status: 200 });
+    return NextResponse.json({ deletedCount: res.deletedCount }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
   } catch (err: any) {
     console.error('DELETE /api/employees failed:', err);
     return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 });

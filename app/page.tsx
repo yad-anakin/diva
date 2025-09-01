@@ -247,7 +247,7 @@ export default function HomePage() {
                 />
                 <div className="text-xs text-gray-500 mt-1" suppressHydrationWarning>
                   {when
-                    ? when.toLocaleString("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                    ? new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(when))
                     : ""}
                 </div>
               </div>

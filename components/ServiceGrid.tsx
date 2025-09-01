@@ -21,7 +21,9 @@ export default function ServiceGrid({ services, selectedIds, onToggle }: Props) 
           >
             <div className="text-sm text-pink-500">الخدمة</div>
             <div className="font-semibold mt-1">{s.name}</div>
-            <div className="text-sm mt-2 text-gray-600">IQD {s.price.toLocaleString()}</div>
+            <div className="text-sm mt-2 text-gray-600" suppressHydrationWarning>
+              IQD {new Intl.NumberFormat("ar-IQ").format(s.price)}
+            </div>
           </button>
         );
       })}

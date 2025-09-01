@@ -21,7 +21,7 @@ export default function AppointmentPage() {
   const [buyer, setBuyer] = useState("");
   const [employeeIds, setEmployeeIds] = useState<string[]>([]);
   const [serviceIds, setServiceIds] = useState<string[]>([]);
-  const [when, setWhen] = useState<string>(() => new Date().toISOString());
+  const [when, setWhen] = useState<string>("");
   const [currency, setCurrency] = useState("IQD");
   const [overrides, setOverrides] = useState<Record<string, number>>({});
   const [calendarOpen, setCalendarOpen] = useState(true);
@@ -50,6 +50,8 @@ export default function AppointmentPage() {
   }
 
   useEffect(() => {
+    // Initialize time client-side to avoid SSR/CSR mismatch
+    if (!when) setWhen(new Date().toISOString());
     fetchAppointments();
   }, []);
 
@@ -171,7 +173,9 @@ export default function AppointmentPage() {
           <div>
             <label className="block text-sm text-gray-600 mb-1">التاريخ والوقت</label>
             <button type="button" onClick={() => setCalendarOpen(true)} className="w-full border rounded-xl px-3 py-2 text-right hover:bg-pink-50">
-              {new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(when))}
+              <span suppressHydrationWarning>
+                {when ? new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(when)) : "—"}
+              </span>
             </button>
           </div>
           <div>
@@ -202,7 +206,9 @@ export default function AppointmentPage() {
                 <div key={s.id} className="flex items-center justify-between gap-3">
                   <div>
                     <div className="font-medium">{s.name}</div>
-                    <div className="text-xs text-gray-500">الافتراضي: IQD {s.price.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500" suppressHydrationWarning>
+                      الافتراضي: IQD {new Intl.NumberFormat("ar-IQ").format(s.price)}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">السعر</span>
@@ -221,9 +227,9 @@ export default function AppointmentPage() {
               <span>
                 {(() => {
                   try {
-                    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(total);
+                    return new Intl.NumberFormat("ar-IQ", { style: "currency", currency }).format(total);
                   } catch {
-                    return `${currency} ${total.toLocaleString()}`;
+                    return `${currency} ${new Intl.NumberFormat("ar-IQ").format(total)}`;
                   }
                 })()}
               </span>
@@ -262,7 +268,9 @@ export default function AppointmentPage() {
                   <div className="flex items-start justify-between gap-3 cursor-pointer hover:bg-pink-50/40 px-2 rounded" onClick={() => setSelectedAppt(it)} title="عرض التفاصيل">
                     <div>
                       <div className="font-medium">{it.buyer}</div>
-                      <div className="text-xs text-gray-500">{new Date(it.when).toLocaleString("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                      <div className="text-xs text-gray-500" suppressHydrationWarning>
+                        {new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(it.when))}
+                      </div>
                       <div className="text-xs text-gray-600 mt-1">
                         {sList.map((s) => s.name).join(", ") || "-"}
                       </div>
@@ -274,9 +282,9 @@ export default function AppointmentPage() {
                       <div className="text-sm font-semibold">
                         {(() => {
                           try {
-                            return new Intl.NumberFormat(undefined, { style: "currency", currency: it.currency }).format(total);
+                            return new Intl.NumberFormat("ar-IQ", { style: "currency", currency: it.currency }).format(total);
                           } catch {
-                            return `${it.currency} ${total.toLocaleString()}`;
+                            return `${it.currency} ${new Intl.NumberFormat("ar-IQ").format(total)}`;
                           }
                         })()}
                       </div>
@@ -308,7 +316,7 @@ export default function AppointmentPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-gray-500">التاريخ</div>
-                    <div>{new Date(selectedAppt.when).toLocaleDateString("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
+                    <div suppressHydrationWarning>{new Intl.DateTimeFormat("ar-IQ", { weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(new Date(selectedAppt.when))}</div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500">الوقت</div>
@@ -322,8 +330,8 @@ export default function AppointmentPage() {
                       {selectedAppt.serviceIds.map((sid) => {
                         const s = services.find((x) => x.id === sid);
                         const price = selectedAppt.overrides?.[sid] ?? s?.price ?? 0;
-                        let priceFmt = `${selectedAppt.currency || 'IQD'} ${price.toLocaleString()}`;
-                        try { priceFmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: selectedAppt.currency || 'IQD' }).format(price); } catch {}
+                        let priceFmt = `${selectedAppt.currency || 'IQD'} ${new Intl.NumberFormat('ar-IQ').format(price)}`;
+                        try { priceFmt = new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: selectedAppt.currency || 'IQD' }).format(price); } catch {}
                         return (
                           <li key={sid} className="text-sm">
                             {s ? `${s.name} - ${priceFmt}` : sid}
@@ -362,9 +370,9 @@ export default function AppointmentPage() {
                         return acc + price;
                       }, 0);
                       try {
-                        return new Intl.NumberFormat(undefined, { style: 'currency', currency: selectedAppt.currency || 'IQD' }).format(total);
+                        return new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: selectedAppt.currency || 'IQD' }).format(total);
                       } catch {
-                        return `${selectedAppt.currency || 'IQD'} ${total.toLocaleString()}`;
+                        return `${selectedAppt.currency || 'IQD'} ${new Intl.NumberFormat('ar-IQ').format(total)}`;
                       }
                     })()}
                   </div>

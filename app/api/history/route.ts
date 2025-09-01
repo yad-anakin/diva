@@ -4,6 +4,10 @@ import clientPromise from '@/lib/mongodb';
 const DB_NAME = 'diva';
 const COLLECTION = 'history';
 
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 export async function GET() {
   try {
     const client = await clientPromise;
@@ -13,10 +17,10 @@ export async function GET() {
       const { _id, _idObj, ...rest } = it;
       return { ...rest, _id: String(_id) };
     });
-    return NextResponse.json(serialized, { status: 200 });
+    return NextResponse.json(serialized, { status: 200, headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' } });
   } catch (err: any) {
     console.error('GET /api/history failed:', err);
-    return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }
 }
 
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
       sourceAppointmentId: body._id ? String(body._id) : undefined,
     } as any;
     const res = await db.collection(COLLECTION).insertOne(doc);
-    return NextResponse.json({ _id: String(res.insertedId), ...doc }, { status: 201 });
+    return NextResponse.json({ _id: String(res.insertedId), ...doc }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
   } catch (err: any) {
     console.error('POST /api/history failed:', err);
     return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 });
@@ -52,7 +56,7 @@ export async function DELETE() {
     const client = await clientPromise;
     const db = client.db(DB_NAME);
     const res = await db.collection(COLLECTION).deleteMany({});
-    return NextResponse.json({ deletedCount: res.deletedCount }, { status: 200 });
+    return NextResponse.json({ deletedCount: res.deletedCount }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
   } catch (err: any) {
     console.error('DELETE /api/history failed:', err);
     return NextResponse.json({ error: err?.message || 'Unknown error' }, { status: 500 });
