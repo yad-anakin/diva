@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const [email, setEmail] = useState("");
@@ -131,5 +131,19 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen grid place-items-center bg-white p-4">
+          <div className="text-gray-500">...</div>
+        </main>
+      }
+    >
+      <LoginPageInner />
+    </Suspense>
   );
 }
